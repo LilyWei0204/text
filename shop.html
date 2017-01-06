@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
+    <script src="bower_components/angular/angular.min.js"></script>
+    <script src="filter.js"></script>
+
+    <style>
+        table tr th,table tr td{
+            text-align: center;
+        }
+    </style>
+</head>
+<body ng-app="myapp">
+    <div ng-controller="car"> <!-- 控制器-->
+        <!--
+        ng-show=true   显示
+        ng-hide        隐藏
+        过滤器  将已有的东西通过指定的规则来进行过滤
+        -->
+
+        <!--搜索部分-->
+        <div class="input-group" ng-hide="data.length==0">
+            <span class="input-group-addon glyphicon glyphicon-search"></span>
+            <input type="text" class="form-control" placeholder="Username" ng-model="search">
+        </div>
+
+        <!--表头-->
+        <div style="text-align: center" ng-show="data.length==0">购物车是空的</div>  <!--ng-show显示，当购物车的数据为0时，显示购物车是空的-->
+        <table class="table" ng-hide="data.length==0">  <!--当购物车是空的时候，表隐藏-->
+            <tr>
+                <th>商品名称</th>
+                <th>
+                    商品价格
+                    <div ng-class={dropup:type!==""} ng-click="order()">
+                        <!--当排序类型为空的时候，dropup默认为倒序。-->
+                        <span class="caret"></span>
+                    </div>
+                </th>
+                <th>商品数量</th>
+                <th>商品总价</th>
+                <th>操作</th>
+            </tr>
+            <tr ng-repeat="item in data | filter:search | orderBy:type+ziduan">
+                <td>{{item.name}}</td>
+                <td>{{item.price}}</td>
+                <td class="text-center">
+                    <div class="form-group" style="width: 120px;margin: auto">
+                        <div class="input-group">
+                            <div class="input-group-addon" ng-click="jian(item.id)">&lt;</div>
+                            <input class="form-control" type="text" placeholder="num" ng-model="item.num">
+                            <div class="input-group-addon" ng-click="add(item.id)">&gt;</div>
+                        </div>
+                    </div>
+                </td>
+
+                <td>{{item.price*item.num}}</td>
+                <td>
+                    <button class="btn-danger btn" ng-click="del(item.id)">删除</button>
+                </td>
+            </tr>
+            <tr>
+                <td>总价钱：</td>
+                <td>{{getPrice()}}</td>
+                <td>总数量</td>
+                <td>{{getNum()}}</td>
+                <td>
+                    <button class="btn-danger btn" ng-click="clear()">
+                        清除购物车
+                    </button>
+                </td>
+            </tr>
+        </table>
+
+        <!--<div ng-repeat="aa in info">//测试ng-repeat循环
+            {{aa}}
+        </div>-->
+
+            <!--格式化数字为货币格式-->
+            <!--{{123445|currency:"¥":4}}-->
+       <!-- {{[3,9,1,2,7,4] | orderBy:"-" | limitTo:2}}
+        &lt;!&ndash;对数组进行排序，orderBy默认是正序，加上-是倒序，limitTo截取显示的个数&ndash;&gt;-->
+    </div>
+    {{[3,6,1,2,9]|minOrmax:"max"}}
+
+</body>
+<script>
+    var app=angular.module("myapp",["filters"]);
+    app.controller("car",["$scope","$filter","$http",function($scope,$filter,$http){
+        //$scope.info=[1,2,3,4,5];测试ng-repeat循环
+        $scope.type="";
+        $scope.ziduan="price";
+        $scope.order=function(){
+            if($scope.type==""){
+                $scope.type="-";
+            }else{
+                $scope.type="";
+            }
+        }
+        $scope.data=[
+            {
+                id:1,
+                name:"鞋",
+                price:100,
+                num:2
+            },
+            {
+                id:2,
+                name:"上衣",
+                price:100,
+                num:1
+            },
+            {
+                id:3,
+                name:"卫衣",
+                price:150,
+                num:1
+            },
+            {
+                id:4,
+                name:"帽子",
+                price:200,
+                num:1
+            },
+            {
+                id:5,
+                name:"裤子",
+                price:180,
+                num:3
+            }
+
+        ]
+        $scope.getPrice=function(){
+            var prices=0;
+            angular.forEach($scope.data,function(obj,index){
+                prices+=obj.price*obj.num;
+            })
+            return prices;
+        }
+        $scope.getNum=function(){
+            var nums=0;
+            angular.forEach($scope.data,function(obj,index){
+                var num=obj.num;
+                if(parseInt(num)&&parseInt(num)>0){
+                    nums+=num*1;
+                }else{
+                    obj.num="";
+                }
+            })
+            return nums;
+        }
+        $scope.del=function(id){
+            for(var i=0;i<$scope.data.length;i++){
+                if(id==$scope.data[i].id){
+                    $scope.data.splice(i,1);
+                }
+            }
+        }
+        $scope.clear=function(){
+            $scope.data=[];
+        }
+        $scope.jian=function(id){
+            for(var i=0;i<$scope.data.length;i++){
+                if($scope.data[i].id==id){
+                    $scope.data[i].num--;
+                }
+            }
+        }
+        $scope.add=function(id){
+            for(var i=0;i<$scope.data.length;i++){
+                if($scope.data[i].id==id){
+                    $scope.data[i].num++;
+                }
+            }
+        }
+    }]).filter("min",function(){//自己定义的过滤器
+        return function (origin){
+            if(type=="min"){
+                var temp=origin[0];
+                for(var i=0;i<origin.length;i++){
+                    if(origin[i]<temp){
+                        temp=origin[i];
+                    }
+                }
+                return temp;
+            }
+        }
+    })
+
+</script>
+</html>
